@@ -71,7 +71,7 @@ window.addEventListener("mousemove", (e) => {
 var typed = new Typed(".auto-input", {
     strings: [
         ' ',
-        'UI/UX Designer',
+        'Game Developer ',
         'React',
         'Python',
         'JavaScript'
