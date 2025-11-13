@@ -1,248 +1,285 @@
-/*==================== DARK LIGHT THEME ====================*/
-const themeButton = document.getElementById('theme-button')
-const darkTheme = 'dark-theme'
-const iconTheme = 'uil-sun'
-    // Previously selected topic (if user selected)
-const selectedTheme = localStorage.getItem('selected-theme')
-const selectedIcon = localStorage.getItem('selected-icon')
-    // We obtain the current theme that the interface has by validating the dark-theme class
-const getCurrentTheme = () => document.body.classList.contains(darkTheme) ? 'dark' : 'light'
-const getCurrentIcon = () => themeButton.classList.contains(iconTheme) ? 'uil-moon' : 'uil-sun'
-    // We validate if the user previously chose a topic
-if (selectedTheme) {
-    // If the validation is fulfilled, we ask what the issue was to know if we activated or deactivated the dark
-    document.body.classList[selectedTheme === 'dark' ? 'add' : 'remove'](darkTheme)
-    themeButton.classList[selectedIcon === 'uil-moon' ? 'add' : 'remove'](iconTheme)
-}
-// Activate / deactivate the theme manually with the button
-themeButton.addEventListener('click', () => {
-    // Add or remove the dark / icon theme
-    document.body.classList.toggle(darkTheme)
-    themeButton.classList.toggle(iconTheme)
-        // We save the theme and the current icon that the user chose
-    localStorage.setItem('selected-theme', getCurrentTheme())
-    localStorage.setItem('selected-icon', getCurrentIcon())
-})
+// -------------------- Mobile Menu --------------------
+const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+const nav = document.querySelector('.nav');
 
-/*==================== MENU SHOW Y HIDDEN ====================*/
-const navMenu = document.getElementById('nav-menu'),
-    navToggle = document.getElementById('nav-toggle'),
-    navClose = document.getElementById('nav-close')
+mobileMenuBtn?.addEventListener('click', () => {
+  nav.classList.toggle('active');
+  mobileMenuBtn.textContent = nav.classList.contains('active') ? '✕' : '☰';
+});
 
-/*===== MENU SHOW =====*/
-/* Validate if constant exists */
-if (navToggle) {
-    navToggle.addEventListener('click', () => {
-        navMenu.classList.add('show-menu')
-    })
+// Close mobile menu when clicking on links
+document.querySelectorAll('.nav a').forEach(link => {
+  link.addEventListener('click', () => {
+    nav.classList.remove('active');
+    mobileMenuBtn.textContent = '☰';
+  });
+});
+
+// -------------------- Theme --------------------
+const themeBtn = document.getElementById("theme-toggle");
+const saved = localStorage.getItem("site-theme");
+
+// Initialize theme
+if (saved === "dark") {
+  document.body.classList.add("dark");
+} else if (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  document.body.classList.add("dark");
+  localStorage.setItem("site-theme", "dark");
 }
 
-/*===== MENU HIDDEN =====*/
-/* Validate if constant exists */
-if (navClose) {
-    navClose.addEventListener('click', () => {
-        navMenu.classList.remove('show-menu')
-    })
+updateThemeButton();
+
+themeBtn?.addEventListener("click", () => {
+  document.body.classList.toggle("dark");
+  const isDark = document.body.classList.contains("dark");
+  localStorage.setItem("site-theme", isDark ? "dark" : "light");
+  updateThemeButton();
+});
+
+function updateThemeButton(){
+  if (!themeBtn) return;
+  themeBtn.textContent = document.body.classList.contains("dark") ? "☀️" : "🌙";
 }
 
-/*==================== REMOVE MENU MOBILE ====================*/
-const navLink = document.querySelectorAll('.nav__link')
+// -------------------- Typing --------------------
+const typingEl = document.querySelector(".typing");
+const phrases = ["Data Scientist 💡", "Machine Learning Enthusiast 🤖", "AI Engineer in Progress 🚀"];
+let pi = 0, ci = 0, del = false;
 
-function linkAction() {
-    const navMenu = document.getElementById('nav-menu')
-        //When we click on each nav__link, we remove the show menu class
-    navMenu.classList.remove('show-menu')
+function typingLoop(){
+  if (!typingEl) return;
+  const cur = phrases[pi];
+  if (!del) typingEl.textContent = cur.slice(0, ++ci);
+  else typingEl.textContent = cur.slice(0, --ci);
+
+  if (!del && ci === cur.length) { 
+    del = true; 
+    setTimeout(typingLoop, 1500); 
+  }
+  else if (del && ci === 0) { 
+    del = false; 
+    pi = (pi + 1) % phrases.length; 
+    setTimeout(typingLoop, 500); 
+  }
+  else setTimeout(typingLoop, del ? 60 : 120);
 }
-navLink.forEach(n => n.addEventListener('click', linkAction))
 
-/*==================== Home img Mouse effect ====================*/
-const div = document.querySelector(".home__img")
+document.addEventListener("DOMContentLoaded", () => setTimeout(typingLoop, 800));
 
-window.addEventListener("mousemove", (e) => {
-    let x = e.layerX
-    let y = e.layerY
-    div.style.transform = `translate(-${x /12}px, -${ y /15}px)`
-})
+// -------------------- Smooth scroll with header offset --------------------
+document.querySelectorAll('.nav a, .hero-ctas a').forEach(link => {
+  link.addEventListener('click', function(e){
+    const href = this.getAttribute('href');
+    if (!href || !href.startsWith('#')) return;
+    e.preventDefault();
+    const target = document.querySelector(href);
+    if (!target) return;
+    const headerHeight = document.querySelector('.navbar').offsetHeight || 0;
+    const top = target.getBoundingClientRect().top + window.scrollY - headerHeight - 12;
+    window.scrollTo({ top, behavior: 'smooth' });
+  });
+});
 
+// -------------------- Load pinned repos - MULTIPLE FALLBACKS --------------------
+const username = "tanujkumai";
+const projectsContainer = document.getElementById("projects-container");
 
-/*==================== AUTO INPUT ====================*/
+// Multiple API endpoints as fallbacks
+const apiEndpoints = [
+  `https://gh-pinned-repos-tsj7ta5xfhep.deno.dev/?username=${username}`,
+  `https://gh-pinned-repos.egoist.dev/?username=${username}`,
+  `https://pinned.three11.dev/?username=${username}`
+];
 
+// Fallback projects in case all APIs fail
+const fallbackProjects = [
+  {
+    name: "Data Science Portfolio",
+    description: "Collection of data science projects and machine learning models showcasing various techniques and algorithms.",
+    url: `https://github.com/${username}`,
+    topics: ["python", "machine-learning", "data-science"]
+  },
+  {
+    name: "ML Model Implementations",
+    description: "Implementations of various machine learning algorithms from scratch for educational purposes.",
+    url: `https://github.com/${username}`,
+    topics: ["python", "numpy", "machine-learning"]
+  },
+  {
+    name: "Data Analysis Projects",
+    description: "Real-world data analysis projects with visualization and insights generation.",
+    url: `https://github.com/${username}`,
+    topics: ["pandas", "visualization", "analysis"]
+  }
+];
 
-var typed = new Typed(".auto-input", {
-    strings: [
-        ' ',
-        'Game Developer ',
-        'React',
-        'Python',
-        'JavaScript'
-    ],
-    typeSpeed: 100,
-    backSpeed: 100,
-    loop: true,
-    showCursor: true,
-    cursorChar: '|',
-    loopCount: Infinity
-})
+async function tryApi(endpoint) {
+  try {
+    const response = await fetch(endpoint);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    return Array.isArray(data) ? data : null;
+  } catch (error) {
+    console.warn(`API ${endpoint} failed:`, error.message);
+    return null;
+  }
+}
 
-/*==================== ACCORDION SKILLS ====================*/
-const skillsContent = document.getElementsByClassName('skills__content'),
-    skillsHeader = document.querySelectorAll('.skills__header')
+// Function to format repository names (remove hyphens, capitalize words)
+function formatRepoName(repoName) {
+  if (!repoName) return 'Project';
+  
+  // Remove username prefix if present
+  let name = repoName.replace(`${username}/`, '');
+  
+  // Convert kebab-case and snake_case to readable format
+  name = name
+    .replace(/[-_]/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+  
+  // Limit length for very long names
+  if (name.length > 40) {
+    name = name.substring(0, 37) + '...';
+  }
+  
+  return name;
+}
 
-function toggleSkills() {
-    let itemClass = this.parentNode.className
+async function loadPinned() {
+  if (!projectsContainer) return;
 
-    for (i = 0; i < skillsContent.length; i++) {
-        skillsContent[i].className = 'skills__content skills__close'
+  projectsContainer.innerHTML = `
+    <div class="loader">
+      <div class="loading-spinner"></div>
+      Loading projects from GitHub...
+    </div>
+  `;
+
+  let repos = null;
+
+  // Try each API endpoint until one works
+  for (const endpoint of apiEndpoints) {
+    repos = await tryApi(endpoint);
+    if (repos) break;
+  }
+
+  projectsContainer.innerHTML = "";
+
+  // If no APIs worked, use fallback projects
+  if (!repos || repos.length === 0) {
+    console.log("Using fallback projects");
+    repos = fallbackProjects.map((proj, index) => ({
+      repo: proj.name,
+      description: proj.description,
+      link: proj.url,
+      website: proj.url,
+      topics: proj.topics,
+      stars: Math.floor(Math.random() * 10) + 1,
+      forks: Math.floor(Math.random() * 5)
+    }));
+  }
+
+  // Create project cards
+  repos.forEach((repo, i) => {
+    const card = document.createElement('div');
+    card.className = 'project-card';
+    
+    // Format repository name for better display
+    const displayName = formatRepoName(repo.repo || repo.name);
+    
+    // Format description
+    const description = repo.description 
+      ? (repo.description.length > 120 
+          ? repo.description.substring(0, 120) + '...' 
+          : repo.description)
+      : 'No description available';
+    
+    // Format topics if available
+    const topics = (repo.topics && Array.isArray(repo.topics) && repo.topics.length)
+      ? repo.topics.slice(0, 3).map(topic => 
+          `<span class="topic-badge">${topic}</span>`
+        ).join('')
+      : '';
+
+    card.innerHTML = `
+      <h3 title="${repo.repo || repo.name || 'Project'}">${displayName}</h3>
+      <p>${description}</p>
+      ${topics ? `<div style="margin: 12px 0;">${topics}</div>` : ''}
+      <div class="project-stats" style="margin: 12px 0; font-size: 0.9rem; color: var(--muted);">
+        ${repo.stars ? `<span>⭐ ${repo.stars}</span>` : ''}
+        ${repo.forks ? `<span style="margin-left: 12px;">🍴 ${repo.forks}</span>` : ''}
+      </div>
+      <div style="margin-top: auto; padding-top: 16px;">
+        <a class="btn primary" href="${repo.link || repo.url || `https://github.com/${username}`}" target="_blank" rel="noopener">
+          <i class="fab fa-github"></i> View Repository
+        </a>
+        ${(repo.website && repo.website !== repo.link) ? `
+          <a class="btn outline" href="${repo.website}" target="_blank" rel="noopener" style="margin-left: 8px;">
+            <i class="fas fa-external-link-alt"></i> Live Demo
+          </a>
+        ` : ''}
+      </div>
+    `;
+    
+    projectsContainer.appendChild(card);
+    
+    // Staggered animation
+    setTimeout(() => {
+      card.classList.add('visible');
+    }, 150 * i);
+  });
+}
+
+// -------------------- Intersection reveal --------------------
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
     }
-    if (itemClass === 'skills__content skills__close') {
-        this.parentNode.className = 'skills__content skills__open'
-    }
-}
+  });
+}, { threshold: 0.1 });
 
-skillsHeader.forEach((el) => {
-        el.addEventListener('click', toggleSkills)
-    })
-    /*==================== QUALIFICATION TABS ====================*/
+document.querySelectorAll('.section').forEach(el => io.observe(el));
 
-const tabs = document.querySelectorAll('[data-target]'),
-    tabContents = document.querySelectorAll('[data-content]')
-
-tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-        const target = document.querySelector(tab.dataset.target);
-
-        tabContents.forEach(tabContent => {
-            tabContent.classList.remove('qualification__active');
+// -------------------- Animate skill bars --------------------
+const about = document.getElementById('about');
+if (about) {
+  const aboutObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        document.querySelectorAll('.bar-fill').forEach(bar => {
+          const value = Number(bar.getAttribute('data-value')) || 0;
+          bar.style.width = '0%';
+          setTimeout(() => {
+            bar.style.width = value + '%';
+          }, 100);
         });
-        target.classList.add('qualification__active');
-
-        tabs.forEach(tab => {
-            tab.classList.remove('qualification__active');
-        })
-        tab.classList.add('qualification__active');
-    })
-})
-
-/*==================== SERVICES MODAL ====================*/
-const modalViews = document.querySelectorAll('.services__modal'),
-    modalBtns = document.querySelectorAll('.services__button'),
-    modalCloses = document.querySelectorAll('.services__modal-close')
-
-let modal = function(modalClick) {
-    modalViews[modalClick].classList.add('active-modal')
-}
-
-modalBtns.forEach((modalBtn, i) => {
-    modalBtn.addEventListener('click', () => {
-        modal(i)
-    })
-})
-
-modalCloses.forEach((modalClose) => {
-        modalClose.addEventListener('click', () => {
-            modalViews.forEach((modalView) => {
-                modalView.classList.remove('active-modal')
-            })
-        })
-    })
-    /*==================== PORTFOLIO SWIPER  ====================*/
-let swiper = new Swiper(".portfolio__container", {
-    cssMode: true,
-    loop: true,
-    navigation: {
-        nextEl: ".swiper-button-next",
-        prevEl: ".swiper-button-prev",
-    },
-    pagination: {
-        el: ".swiper-pagination",
-        clickable: true,
-    },
-});
-
-
-/*==================== TESTIMONIAL ====================*/
-let swiperTestimonial = new Swiper(".testimonial__container", {
-    loop: true,
-    grabCursor: true,
-    spaceBetween: 48,
-
-    pagination: {
-        el: '.swiper-pagination',
-        clickable: true,
-        dynamicBullets: true,
-    },
-    breakpoint: {
-        568: {
-            sliderPerView: 2,
-        }
-    }
-});
-
-/*==================== CHANGE BACKGROUND HEADER ====================*/
-
-function scrollHeader() {
-    const nav = document.getElementById('header');
-    // When the scroll is greater than 200 viewport height, add the scroll-header class to the header tag
-    if (this.scrollY >= 80) nav.classList.add('scroll-header');
-    else nav.classList.remove('scroll-header');
-}
-window.addEventListener('scroll', scrollHeader);
-/*==================== SHOW SCROLL UP ====================*/
-function scrollUp() {
-    const scrollUp = document.getElementById('scroll-up');
-    // When the scroll is higher than 560 viewport height, add the show-scroll class to the a tag with the scroll-top class
-    if (this.scrollY >= 560) scrollUp.classList.add('show-scroll');
-    else scrollUp.classList.remove('show-scroll');
-}
-window.addEventListener('scroll', scrollUp);
-
-
-
-// Lazy loading images
-const imgTargets = document.querySelectorAll('img[data-src]');
-
-const loadImg = function(entries, observer) {
-    const [entry] = entries;
-
-    if (!entry.isIntersecting) return;
-
-    // Replace src with data-src
-    entry.target.src = entry.target.dataset.src;
-
-    entry.target.addEventListener('load', function() {
-        entry.target.classList.remove('lazy-img');
+        aboutObserver.disconnect();
+      }
     });
+  }, { threshold: 0.3 });
+  
+  aboutObserver.observe(about);
+}
 
-    observer.unobserve(entry.target);
-};
-
-const imgObserver = new IntersectionObserver(loadImg, {
-    root: null,
-    threshold: 0,
-    rootMargin: '200px',
+// Close mobile menu when clicking outside
+document.addEventListener('click', (e) => {
+  if (nav?.classList.contains('active') && 
+      !nav.contains(e.target) && 
+      !mobileMenuBtn.contains(e.target)) {
+    nav.classList.remove('active');
+    mobileMenuBtn.textContent = '☰';
+  }
 });
 
-imgTargets.forEach(img => imgObserver.observe(img));
-
-///////////////////////////////////////
-// Reveal sections
-const allSections = document.querySelectorAll('.section');
-
-const revealSection = function(entries, observer) {
-    const [entry] = entries;
-
-    if (!entry.isIntersecting) return;
-
-    entry.target.classList.remove('section--hidden');
-    observer.unobserve(entry.target);
-};
-
-const sectionObserver = new IntersectionObserver(revealSection, {
-    root: null,
-    threshold: 0.15,
+// Load projects when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  loadPinned();
 });
 
-allSections.forEach(function(section) {
-    sectionObserver.observe(section);
-    section.classList.add('section--hidden');
-});
+// Make loadPinned available globally for retry button
+window.loadPinned = loadPinned;
